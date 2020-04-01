@@ -266,10 +266,6 @@ void SpringServer::stop(){
   active_ = false;
   ready_ = false;
 
-  // Sleep to handle communication
-  ros::Duration sleep_time(0.01);
-  sleep_time.sleep();
-
   // deactivate object control
   setObjectControl(false);
 
@@ -280,6 +276,10 @@ void SpringServer::stop(){
   grasp_force_pub_.publish(msg);
   manipulation_force_pub_.publish(msg);
 
+  // Sleep to handle communication
+  ros::Duration sleep_time(0.01);
+  sleep_time.sleep();
+  
   // stop subscibers and publishers
   grasp_force_pub_.shutdown();
   manipulation_force_pub_.shutdown();
