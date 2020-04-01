@@ -65,8 +65,9 @@ void VirtualSpring::calcForce(const int end, KDL::Vector &f_out){
   // force = amplitude * direction
   f_out = (k_ * (p_dif.Norm() - l_)) * (p_dif / p_dif.Norm());
 
-  // convert to meters
-  f_out = f_out * 100.0;
+  // normalize output so that it's independent of the spring scale
+  // TODO: make optional
+  f_out = f_out / l_;
 
 }
 /*********************************************************************
