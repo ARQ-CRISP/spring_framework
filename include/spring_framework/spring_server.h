@@ -103,7 +103,7 @@ class SpringServer
 
   public:
 
-    SpringServer(int contact_count, shared_ptr<SpringNetwork>network, bool publish_springs=true, bool publish_transform=true);
+    SpringServer(int contact_count, shared_ptr<SpringNetwork>network, bool publish_springs=true, bool publish_transform=true, double control_frequency=200);
     ~SpringServer();
 
     // Activates the control

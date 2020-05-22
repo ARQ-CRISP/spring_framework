@@ -17,8 +17,10 @@ using namespace spring_framework;
 * Optionally it can publish spring info (publish_springs) as a SpringNetworkMsg
 * and virtual object frame (publish_transform) as a TF.
 *********************************************************************/
-SpringServer::SpringServer(int contact_count, shared_ptr<SpringNetwork> network, bool publish_springs, bool publish_transform){
-  contact_count_ = contact_count;
+SpringServer::SpringServer(int contact_count, shared_ptr<SpringNetwork> network,
+    bool publish_springs, bool publish_transform, double control_frequency)
+      : contact_count_(contact_count), publish_springs_(publish_springs),
+        publish_transform_(publish_transform), control_freq_(control_frequency){
 
   p_logger_ = nullptr;
 
@@ -27,17 +29,12 @@ SpringServer::SpringServer(int contact_count, shared_ptr<SpringNetwork> network,
   control_ = make_shared<SpringController>(contact_count_, network_);
   display_ = make_shared<SpringDisplay>("spring_display");
 
-  control_freq_ = 200;
-
   // initially no object control
   control_object_ = false;
 
   // init handles to null
   handle_update_enter_ = nullptr;
   handle_update_exit_ = nullptr;
-
-  // optional param to activate spring publisher
-  publish_springs_ = publish_springs;
 
   active_ = false;
   ready_ = false;
@@ -279,7 +276,7 @@ void SpringServer::stop(){
   // Sleep to handle communication
   ros::Duration sleep_time(0.01);
   sleep_time.sleep();
-  
+
   // stop subscibers and publishers
   grasp_force_pub_.shutdown();
   manipulation_force_pub_.shutdown();
