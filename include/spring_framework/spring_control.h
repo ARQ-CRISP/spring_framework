@@ -21,8 +21,6 @@
 #include <kdl_control_tools/progress_logger.h>
 
 
-using namespace std;
-
 namespace spring_framework
 {
 
@@ -51,7 +49,7 @@ class SpringController
     // these frames are then referred with their index.
     // virtual object frame vf_ is the first element of
     // this set. Contact frames follow. Then the other frames.
-    vector<KDL::Frame> frame_vec_;
+    std::vector<KDL::Frame> frame_vec_;
 
     // virtual spring objects are stored in the network
     // it's an object created externally
@@ -68,6 +66,10 @@ class SpringController
     // debugging
     shared_ptr<kdl_control_tools::ProgressLogger> p_logger_;
 
+    // functions
+    static KDL::Rotation generalVirtualOrientation_(std::vector<KDL::Frame>& frame_vec, int contact_count=-1);
+    static KDL::Rotation wimbocksVirtualOrientation_(std::vector<KDL::Frame>& frame_vec);
+
   public:
 
     SpringController(int contact_count, shared_ptr<SpringNetwork> network={});
@@ -75,19 +77,19 @@ class SpringController
 
     // returns the virtual frame for the given frames vector.
     // if contact_count is given, that many frames will be used. -1 means all frames.
-    static KDL::Frame computeVirtualFrame(vector<KDL::Frame>& frame_vec, int contact_count=-1);
+    static KDL::Frame computeVirtualFrame(std::vector<KDL::Frame>& frame_vec, int contact_count=-1);
 
     // updates the frames and calculates the new virtual frame pose using the frames
-    void updateState(const vector<KDL::Frame> &frame_vec);
+    void updateState(const std::vector<KDL::Frame> &frame_vec);
 
     // calculate force for a spring
     void calcForce(const int spring_no, KDL::Vector &f_out);
 
     // calculate forces for all springs
-    void calcSpringForces(vector<KDL::Vector> &f_outs);
+    void calcSpringForces(std::vector<KDL::Vector> &f_outs);
 
     // calculate forces for all frames, 0th frame is the VF (!)
-    void calcFrameForces(vector<KDL::Vector> &f_outs, bool double_sided=false);
+    void calcFrameForces(std::vector<KDL::Vector> &f_outs, bool double_sided=false);
 
     // calculates the force to manipulate object position using the desired position and velocity
     // this force is the same for all fingers
@@ -95,7 +97,7 @@ class SpringController
     // calculates the force to manipulate object rotation using the desired rotation
     // returns a vector of forces, for all fingers
     // TODO: rotational damping
-    void calcRotationForce(const KDL::Rotation x_des, vector<KDL::Vector> &f_outs);
+    void calcRotationForce(const KDL::Rotation x_des, std::vector<KDL::Vector> &f_outs);
 
     // sets rest lengths to the current distances between fingers and the VF
     void resetRestLengths(const double scaler = 1.0);
@@ -104,16 +106,16 @@ class SpringController
       // getters
     void getVirtualFrame(KDL::Frame& vf) const;
     KDL::Frame getVirtualFrame() const;
-    vector<KDL::Frame> getFrames() const;
+    std::vector<KDL::Frame> getFrames() const;
     double getRestLength(const int spring_no) const;
-    vector<double> getStiffness() const;
+    std::vector<double> getStiffness() const;
     double getStiffness(const int spring_no) const;
     double getPositionGain() const;
     double getVelocityGain() const;
     double getRotationGain() const;
       // setters
     void setRestLength(const int spring_no, const double l_rest);
-    void setRestLengths(const vector<double> l_rest_vec);
+    void setRestLengths(const std::vector<double> l_rest_vec);
     void setStiffness(const double k);
     void setStiffness(const int spring_no, const double k);
     void setPositionGain(const double k);

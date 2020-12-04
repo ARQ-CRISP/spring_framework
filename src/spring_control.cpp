@@ -3,7 +3,6 @@
 
 #include "spring_framework/spring_control.h"
 
-using namespace std;
 using namespace spring_framework;
 
 /*********************************************************************
@@ -11,8 +10,8 @@ using namespace spring_framework;
 * contact_count defines the number of contacts made with an object,
 * typically the number of fingers.
 *********************************************************************/
-SpringController::SpringController(int contact_count, shared_ptr<SpringNetwork> network){
-
+SpringController::SpringController(int contact_count, shared_ptr<SpringNetwork> network)
+{
   contact_count_ = contact_count;
 
   network_ = network;
@@ -36,8 +35,8 @@ SpringController::~SpringController()
 * see (Li et al. 2016) & (Tahara et al. 2012)
 * also keeps track of time and velocity
 *********************************************************************/
-void SpringController::updateState(const vector<KDL::Frame> &frame_vec) {
-
+void SpringController::updateState(const std::vector<KDL::Frame> &frame_vec)
+{
   // keep previous state for calculations
   KDL::Frame vf_prev(frame_vec_[0]);
 
@@ -50,8 +49,8 @@ void SpringController::updateState(const vector<KDL::Frame> &frame_vec) {
   frame_vec_.insert(frame_vec_.begin(), vf);
 
   // if not "fresh" also calculate the velocity
-  if(!fresh_){
-
+  if (!fresh_)
+  {
     // Calc time since last control
     ros::Time t_now = ros::Time::now();
     double dt_update = (t_now - t_update_).sec + 1e-9 * (t_now - t_update_).nsec;
@@ -76,10 +75,12 @@ void SpringController::updateState(const vector<KDL::Frame> &frame_vec) {
 * it uses the internal state variables,
 * so the state should be updated using updateState().
 *********************************************************************/
-void SpringController::calcForce(const int spring_no, KDL::Vector &f_out){
+void SpringController::calcForce(const int spring_no, KDL::Vector &f_out)
+{
   // size safety
   int spring_count = network_->getSize();
-  if(spring_no >= spring_count) {
+  if (spring_no >= spring_count)
+  {
     f_out = KDL::Vector::Zero();
     ROS_WARN("SpringController: spring no %d out of bounds (%d).",
           spring_no, spring_count);
@@ -95,12 +96,14 @@ void SpringController::calcForce(const int spring_no, KDL::Vector &f_out){
 * it uses the internal state variables,
 * so the state should be updated using updateState().
 *********************************************************************/
-void SpringController::calcSpringForces(vector<KDL::Vector> &f_outs){
+void SpringController::calcSpringForces(std::vector<KDL::Vector> &f_outs)
+{
   // resize force vector to spring count
   int spring_count = network_->getSize();
   f_outs.resize(spring_count);
 
-  for(int si=0; si < spring_count; si++){
+  for (int si=0; si < spring_count; si++)
+  {
     // calculate spring force
     // order matters; force will be applied on the first(0th) frame.
     network_->getSpringForce(si, f_outs[si]);
@@ -111,14 +114,16 @@ void SpringController::calcSpringForces(vector<KDL::Vector> &f_outs){
 * it uses the internal state variables,
 * so the state should be updated using updateState().
 *********************************************************************/
-void SpringController::calcFrameForces(vector<KDL::Vector> &f_outs, bool double_sided){
+void SpringController::calcFrameForces(std::vector<KDL::Vector> &f_outs, bool double_sided)
+{
   // return a force for each frame
   int f_size = frame_vec_.size();
   f_outs.resize(f_size);
   // spring size may be different than the frame size
   int s_size = network_->getSize();
 
-  for(int si=0; si<s_size; si++){
+  for (int si=0; si<s_size; si++)
+  {
     // calc spring force
     KDL::Vector f_spring;
     network_->getSpringForce(si, f_spring);
@@ -128,7 +133,8 @@ void SpringController::calcFrameForces(vector<KDL::Vector> &f_outs, bool double_
     f_outs[fi_1] +=   f_spring;
 
     // if double sided do the same for the opposite frame
-    if(double_sided){
+    if(double_sided)
+    {
       int fi_2 = network_->getSpringFrame(si, 1);
       f_outs[fi_2] += (-f_spring);
     }
@@ -148,7 +154,8 @@ void SpringController::calcPositionForce(const KDL::Vector x_des, const KDL::Vec
   KDL::Vector xd_dif = xd_des - vel_que_.front();
 
   // debug
-  if(p_logger_){
+  if(p_logger_)
+  {
     p_logger_->log("e_pos", x_dif.Norm());
     p_logger_->log("e_vel", xd_dif.Norm());
   }
@@ -160,7 +167,7 @@ void SpringController::calcPositionForce(const KDL::Vector x_des, const KDL::Vec
 * Calculate the force to drive the current vf orientation
 * towards the desired orientation x_des.
 *********************************************************************/
-void SpringController::calcRotationForce(const KDL::Rotation x_des, vector<KDL::Vector> &f_outs)
+void SpringController::calcRotationForce(const KDL::Rotation x_des, std::vector<KDL::Vector> &f_outs)
 {
   // *** Object manipulation force
   // ** Orientation control (Tahara et al. 2012)
@@ -191,7 +198,8 @@ void SpringController::calcRotationForce(const KDL::Rotation x_des, vector<KDL::
   // create a force for each contact
   f_outs.resize(contact_count_);
   // calculate the rotation control force for each contact
-  for(int ci=0; ci < contact_count_; ci++){
+  for(int ci=0; ci < contact_count_; ci++)
+  {
     // finger and object positions
     Eigen::Vector3d x_i;
     Eigen::Vector3d x_o;
@@ -208,7 +216,8 @@ void SpringController::calcRotationForce(const KDL::Rotation x_des, vector<KDL::
     // add rotation control force
     Eigen::Vector3d f_rot = v_n.cross(ax_n);
 
-    if(ax_t != Eigen::Vector3d::Zero()){
+    if (ax_t != Eigen::Vector3d::Zero())
+    {
         // moment vector from finger to rotation pivot
         Eigen::Vector3d rz_axt = r_z.cross(ax_t);
         double nom = (v_n.transpose() * rz_axt);
@@ -228,8 +237,8 @@ void SpringController::calcRotationForce(const KDL::Rotation x_des, vector<KDL::
 * sets rest lengths to the current distances between end frames.
 * optional parameter 'scaler' is applied on the rest lengths.
 *********************************************************************/
-void SpringController::resetRestLengths(const double scaler){
-
+void SpringController::resetRestLengths(const double scaler)
+{
   network_->resetRestLengths(scaler);
 }
 /*********************************************************************
@@ -238,9 +247,9 @@ void SpringController::resetRestLengths(const double scaler){
 // *********** getters
 double SpringController::getRestLength(const int spring_no) const{
   return network_->getRestLength(spring_no); }
-vector<double> SpringController::getStiffness() const{
+std::vector<double> SpringController::getStiffness() const{
   int spring_count = network_->getSize();
-  vector<double> l_rest_vec(spring_count);
+  std::vector<double> l_rest_vec(spring_count);
   for(int si=0; si < spring_count; si++) l_rest_vec[si] = network_->getStiffness(si);
   return l_rest_vec;
 }
@@ -258,13 +267,13 @@ void SpringController::getVirtualFrame(KDL::Frame& vf) const{
 KDL::Frame SpringController::getVirtualFrame() const{
  return frame_vec_[0]; //copy
 }
-vector<KDL::Frame> SpringController::getFrames() const{
+std::vector<KDL::Frame> SpringController::getFrames() const{
   return frame_vec_;
 }
 // *********** setters
 void SpringController::setRestLength(const int spring_no, const double l_rest){
   network_->setRestLength(spring_no, l_rest); }
-void SpringController::setRestLengths(const vector<double> l_rest_vec){
+void SpringController::setRestLengths(const std::vector<double> l_rest_vec){
   network_->setRestLengths(l_rest_vec);
 }
 void SpringController::setStiffness(const double k){ // set same constant for all
@@ -287,44 +296,74 @@ void SpringController::connectLogger(shared_ptr<kdl_control_tools::ProgressLogge
 /*********************************************************************
 * Static functions
 *********************************************************************/
-/*********************************************************************
-* calculates the new virtual frame pose using the contact shared_ptr<frames>
- (first contact_count elements of frame_vec).
-* see (Li et al. 2016) & (Tahara et al. 2012)
-*********************************************************************/
-KDL::Frame SpringController::computeVirtualFrame(vector<KDL::Frame>& frame_vec, int contact_count) {
-  // if not specified, take all frames as contact
-  if(contact_count < 0)
-    contact_count = frame_vec.size();
-  // constants
+/**
+ * Calculates VF rotation as described in Solak et al 2019. Generalizes to other contact counts, not prefered for 4 contacts.
+ */
+KDL::Rotation SpringController::generalVirtualOrientation_(std::vector<KDL::Frame>& frame_vec, int contact_count)
+{
+  // assuming thumb is the last contact
   const int i_thumb = contact_count - 1;
-
-  // calculate VF position
-  KDL::Frame vf = KDL::Frame::Identity(); // I rot, zero pos
-  for(int ci=0; ci < contact_count; ci++){
-
-    // thumb has more weight
-    double weight = 1.0;
-    if(ci==(i_thumb)) weight = 3.0;
-
-    vf.p += frame_vec[ci].p * weight / (double)(contact_count + 2.0); // -1+3
-  }
-
-  // calculate VF rotation
-    // r_x
+  // prelim vectors
+  // r_x
   KDL::Vector r_x = frame_vec[i_thumb].p - frame_vec[0].p;
   r_x = r_x / r_x.Norm();
     // r_z
   KDL::Vector p_mid; // average all except first and last contacts
-  for(int ci=1; ci < i_thumb; ci++)
+  for (int ci=1; ci < i_thumb; ci++)
      p_mid += frame_vec[ci].p/(contact_count-2);
 
   KDL::Vector r_z = (p_mid - frame_vec[0].p) * r_x;
   r_z = r_z / r_z.Norm();
     // r_y
   KDL::Vector r_y = r_z * r_x;
-    // create the rotation matrix
-  vf.M = KDL::Rotation(r_x, r_y, r_z);
+  // create the rotation matrix
+  return KDL::Rotation(r_x, r_y, r_z);
+}
+/**
+ * Calculates VF rotation as described in Wimbock et al 2006. Ad-hoc to 4 contacts
+**/
+KDL::Rotation SpringController::wimbocksVirtualOrientation_(std::vector<KDL::Frame>& frame_vec)
+{
+  // prelim vectors
+  KDL::Vector r_02 = frame_vec[0].p - frame_vec[2].p;
+  KDL::Vector r_13 = frame_vec[1].p - frame_vec[3].p;
+  r_02.Normalize(1e-5);
+  r_13.Normalize(1e-5);
+    // r_x
+  KDL::Vector r_x = r_02 + r_13;
+  r_x.Normalize(1e-5);
+    // r_z
+  KDL::Vector r_z = r_02 * r_13;
+  r_z.Normalize(1e-5);
+    // r_y
+  KDL::Vector r_y = r_z * r_x;
+  // create the rotation matrix
+  return KDL::Rotation(r_x, r_y, r_z);
+}
+/*********************************************************************
+* calculates the new virtual frame pose using the contact frames
+ (first contact_count elements of frame_vec).
+* see (Li et al. 2016) & (Tahara et al. 2012) & (Wimbock et al. 2006)
+*********************************************************************/
+KDL::Frame SpringController::computeVirtualFrame(std::vector<KDL::Frame>& frame_vec, int contact_count)
+{
+  // if not specified, take all frames as contact
+  if (contact_count < 0)
+    contact_count = frame_vec.size();
+
+  // calculate VF position
+  KDL::Frame vf = KDL::Frame::Identity(); // I rot, zero pos
+  for (int ci=0; ci < contact_count; ci++)
+  {
+    vf.p += frame_vec[ci].p / (double)(contact_count);
+  }
+
+  // calculate VF rotation
+  // Wimbock's is ad-hoc to 4 contacts, other one generalizes to other contact counts
+  if (contact_count == 4)
+    vf.M = wimbocksVirtualOrientation_(frame_vec);
+  else
+    vf.M = generalVirtualOrientation_(frame_vec, contact_count);
 
   return vf;
 }
