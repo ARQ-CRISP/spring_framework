@@ -89,7 +89,7 @@ void SpringDisplay::updateSpring(const int spring_no, const double l_rest, const
   marker.color.g = 1.0 - l_ratio * 0.6;
   marker.color.b = 0.4;
   marker.color.a = alpha_;
-  
+
   marker.lifetime = ros::Duration(duration_);
   marker.frame_locked = true;
 
@@ -107,7 +107,9 @@ void SpringDisplay::updateSprings(const SpringNetwork &sn){
   for(int si=0; si<spring_count; si++){
     VirtualSpring spring;
     sn.getSpring(si, spring);
-    updateSpring(si, spring);
+    // show only non-zero stiffness
+    if (spring.getStiffness() > 0)
+      updateSpring(si, spring);
   }
 }
 /*********************************************************************
