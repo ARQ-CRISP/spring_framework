@@ -21,8 +21,8 @@ VirtualSpring::VirtualSpring(const double l_rest, const double k){
   setRestLength(l_rest);
   setStiffness(k);
 }
-VirtualSpring::VirtualSpring(const VirtualSpring &vs){
-
+VirtualSpring::VirtualSpring(const VirtualSpring &vs)
+{
   k_ = vs.getStiffness();
   l_ = vs.getRestLength();
   frame_vec_ = vs.getFrames();
@@ -30,16 +30,18 @@ VirtualSpring::VirtualSpring(const VirtualSpring &vs){
 /*********************************************************************
 * Destructor
 *********************************************************************/
-VirtualSpring::~VirtualSpring(){
-
+VirtualSpring::~VirtualSpring()
+{
 }
 /*********************************************************************
 * Updates the frame poses on spring's ends.
 * This should be called every time the spring end poses change.
 *********************************************************************/
-void VirtualSpring::updateFrames(const vector<KDL::Frame> &frame_vec){
+void VirtualSpring::updateFrames(const vector<KDL::Frame> &frame_vec)
+{
   // size safety
-  if(frame_vec.size() != 2) {
+  if (frame_vec.size() != 2)
+  {
     ROS_WARN("VirtualSpring: should have 2 frames.");
   }
 
@@ -50,10 +52,11 @@ void VirtualSpring::updateFrames(const vector<KDL::Frame> &frame_vec){
 * 'end' argument indicates the end frame index (0 or 1)
 * where the force is applied.
 *********************************************************************/
-void VirtualSpring::calcForce(const int end, KDL::Vector &f_out){
-
+void VirtualSpring::calcForce(const int end, KDL::Vector &f_out)
+{
   // wrong end index
-  if (end > 1 || end < 0) {
+  if (end > 1 || end < 0)
+  {
     f_out = KDL::Vector::Zero();
     ROS_WARN("VirtualSpring: end argument is either 0 or 1.");
     return;
@@ -64,16 +67,12 @@ void VirtualSpring::calcForce(const int end, KDL::Vector &f_out){
 
   // force = amplitude * direction
   f_out = (k_ * (p_dif.Norm() - l_)) * (p_dif / p_dif.Norm());
-
-  // normalize output so that it's independent of the spring scale
-  // TODO: make optional
-  f_out = f_out / l_;
-
 }
 /*********************************************************************
 * return a message equivalent to this spring
 *********************************************************************/
-VirtualSpringMsg VirtualSpring::toMsg() const{
+VirtualSpringMsg VirtualSpring::toMsg() const
+{
   VirtualSpringMsg msg;
 
   msg.k = k_;
